@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analyzer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: radial-gradient(circle at top left, #172554, transparent 35%), #080d1a;
+            color: #e5e7eb;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 900px;
+            margin: auto;
+            padding: 35px 0 25px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .brand h1 {
+            font-size: 26px;
+            letter-spacing: -0.5px;
+        }
+
+        .brand p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .project-badge {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            background: #111827;
+            color: #93c5fd;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .panel {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid #263449;
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+
+        .panel-heading h2 {
+            font-size: 19px;
+            margin-bottom: 5px;
+        }
+
+        .panel-heading p {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        #wordCount {
+            color: #60a5fa;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            resize: vertical;
+            border-radius: 13px;
+            border: 1px solid #334155;
+            background: #090f1d;
+            color: #e5e7eb;
+            padding: 17px;
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 1.7;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        textarea::placeholder { color: #64748b; }
+
+        textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            gap: 9px;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 11px 17px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .secondary-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+        }
+
+        .secondary-btn:hover {
+            background: #334155;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            color: #93c5fd;
+            font-size: 13px;
+        }
+
+        .spinner {
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            border: 3px solid #334155;
+            border-top-color: #3b82f6;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden { display: none; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: #0f172a;
+            border: 1px solid #263449;
+            border-radius: 13px;
+            padding: 17px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .result-card {
+            background: #0b1220;
+            border: 1px solid #263449;
+            border-radius: 13px;
+            padding: 18px;
+        }
+
+        .result-card h3 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #93c5fd;
+        }
+
+        .classification-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .badge-positive {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
+        .badge-negative {
+            background: #450a0a;
+            color: #fca5a5;
+        }
+
+        .badge-neutral {
+            background: #1e3a5f;
+            color: #93c5fd;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        .score-row .value {
+            color: #e5e7eb;
+            font-weight: 600;
+        }
+
+        .gauge-track {
+            height: 8px;
+            width: 100%;
+            background: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .gauge-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        .gauge-positive { background: linear-gradient(90deg, #10b981, #6ee7b7); }
+        .gauge-negative { background: linear-gradient(90deg, #ef4444, #fca5a5); }
+        .gauge-neutral  { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
+
+        .error {
+            background: #3f1212;
+            border: 1px solid #7f1d1d;
+            color: #fecaca;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        footer {
+            text-align: center;
+            color: #475569;
+            font-size: 12px;
+            padding-top: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .container { width: 94%; padding-top: 25px; }
+            header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .project-badge { display: none; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .results-grid { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .left-controls, .right-controls { width: 100%; }
+            button { flex: 1; }
+            .panel-heading { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <h1>Sentiment Analyzer</h1>
+                <p>NLP-based text sentiment analysis</p>
+            </div>
+            <div class="project-badge">NLP MINI PROJECT</div>
+        </header>
+
+        <!-- Input Panel -->
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Analyze Your Text</h2>
+                    <p>Paste a paragraph, review, or comment to analyze its sentiment.</p>
+                </div>
+                <span id="wordCount">0 words</span>
+            </div>
+            <textarea id="textInput" placeholder="Paste or type your text here..."></textarea>
+            <div class="controls">
+                <div class="left-controls">
+                    <button class="primary-btn" id="analyzeBtn">Analyze Sentiment</button>
+                    <button class="secondary-btn" id="clearBtn">Clear</button>
+                </div>
+                <div class="right-controls">
+                    <button class="secondary-btn" id="sampleBtn">Load Sample</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <div class="loading hidden" id="loadingIndicator">
+            <div class="spinner"></div>
+            <span>Analyzing sentiment...</span>
+        </div>
+
+        <!-- Error Display -->
+        <div class="error hidden" id="errorDisplay"></div>
+
+        <!-- Results Section -->
+        <div class="hidden" id="resultsSection">
+            <!-- Statistics -->
+            <div class="stats" id="statsContainer">
+                <div class="stat">
+                    <div class="stat-label">Words</div>
+                    <div class="stat-value" id="statWords">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Sentences</div>
+                    <div class="stat-value" id="statSentences">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Characters</div>
+                    <div class="stat-value" id="statChars">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Avg Word Length</div>
+                    <div class="stat-value" id="statAvgWord">0</div>
+                </div>
+            </div>
+
+            <!-- Side-by-side results -->
+            <div class="results-grid">
+                <!-- Pattern Analysis Card -->
+                <div class="result-card" id="patternCard">
+                    <h3>Pattern Analysis</h3>
+                    <div class="classification-badge" id="patternBadge">Neutral</div>
+                    <div class="score-row">
+                        <span>Polarity</span>
+                        <span class="value" id="patternPolarity">0.0000</span>
+                    </div>
+                    <div class="score-row">
+                        <span>Subjectivity</span>
+                        <span class="value" id="patternSubjectivity">0.0000</span>
+                    </div>
+                    <div class="gauge-track">
+                        <div class="gauge-bar gauge-neutral" id="patternGauge" style="width: 50%;"></div>
+                    </div>
+                </div>
+
+                <!-- Lexicon Analysis Card -->
+                <div class="result-card" id="lexiconCard">
+                    <h3>Lexicon Analysis</h3>
+                    <div class="classification-badge" id="lexiconBadge">Neutral</div>
+                    <div class="score-row">
+                        <span>Compound</span>
+                        <span class="value" id="lexiconCompound">0.0000</span>
+                    </div>
+                    <div class="score-row">
+                        <span>Positive</span>
+                        <span class="value" id="lexiconPos">0.0000</span>
+                    </div>
+                    <div class="score-row">
+                        <span>Negative</span>
+                        <span class="value" id="lexiconNeg">0.0000</span>
+                    </div>
+                    <div class="score-row">
+                        <span>Neutral</span>
+                        <span class="value" id="lexiconNeu">0.0000</span>
+                    </div>
+                    <div class="gauge-track">
+                        <div class="gauge-bar gauge-neutral" id="lexiconGauge" style="width: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Natural Language Processing — Sentiment Analyzer
+        </footer>
+    </div>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const wordCount = document.getElementById('wordCount');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const sampleBtn = document.getElementById('sampleBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const resultsSection = document.getElementById('resultsSection');
+
+        textInput.addEventListener('input', function() {
+            const text = this.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            wordCount.textContent = words + ' word' + (words !== 1 ? 's' : '');
+        });
+
+        sampleBtn.addEventListener('click', function() {
+            const sample = "This product is absolutely wonderful! I am extremely satisfied with my purchase. The quality exceeded my expectations and the delivery was fast. I would highly recommend this to anyone looking for a great product.";
+            textInput.value = sample;
+            textInput.dispatchEvent(new Event('input'));
+        });
+
+        clearBtn.addEventListener('click', function() {
+            textInput.value = '';
+            wordCount.textContent = '0 words';
+            hideResults();
+            hideError();
+        });
+
+        analyzeBtn.addEventListener('click', function() {
+            const text = textInput.value.trim();
+            if (!text) {
+                showError('Please enter some text to analyze.');
+                return;
+            }
+
+            showLoading(true);
+            hideResults();
+            hideError();
+
+            fetch('/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                showLoading(false);
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(function() {
+                showLoading(false);
+                showError('Network error. Please try again.');
+            });
+        });
+
+        function displayResults(data) {
+            document.getElementById('statWords').textContent = data.total_words;
+            document.getElementById('statSentences').textContent = data.total_sentences;
+            document.getElementById('statChars').textContent = data.total_characters;
+            document.getElementById('statAvgWord').textContent = data.avg_word_length;
+
+            const pattern = data.pattern;
+            setBadge('patternBadge', pattern.classification);
+            document.getElementById('patternPolarity').textContent = pattern.polarity;
+            document.getElementById('patternSubjectivity').textContent = pattern.subjectivity;
+            setGauge('patternGauge', pattern.polarity, 'patternBadge');
+
+            const lexicon = data.lexicon;
+            setBadge('lexiconBadge', lexicon.classification);
+            document.getElementById('lexiconCompound').textContent = lexicon.compound;
+            document.getElementById('lexiconPos').textContent = lexicon.positive;
+            document.getElementById('lexiconNeg').textContent = lexicon.negative;
+            document.getElementById('lexiconNeu').textContent = lexicon.neutral;
+            setGauge('lexiconGauge', lexicon.compound, 'lexiconBadge');
+
+            resultsSection.classList.remove('hidden');
+        }
+
+        function setBadge(elementId, classification) {
+            const badge = document.getElementById(elementId);
+            badge.textContent = classification;
+            badge.className = 'classification-badge';
+            if (classification === 'Positive') {
+                badge.classList.add('badge-positive');
+            } else if (classification === 'Negative') {
+                badge.classList.add('badge-negative');
+            } else {
+                badge.classList.add('badge-neutral');
+            }
+        }
+
+        function setGauge(gaugeId, score, badgeId) {
+            const gauge = document.getElementById(gaugeId);
+            const percent = ((score + 1) / 2) * 100;
+            gauge.style.width = Math.min(100, Math.max(0, percent)) + '%';
+
+            const badge = document.getElementById(badgeId);
+            gauge.className = 'gauge-bar';
+            if (badge.textContent === 'Positive') {
+                gauge.classList.add('gauge-positive');
+            } else if (badge.textContent === 'Negative') {
+                gauge.classList.add('gauge-negative');
+            } else {
+                gauge.classList.add('gauge-neutral');
+            }
+        }
+
+        function showLoading(visible) {
+            if (visible) {
+                loadingIndicator.classList.remove('hidden');
+            } else {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        function showError(message) {
+            errorDisplay.textContent = message;
+            errorDisplay.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorDisplay.classList.add('hidden');
+        }
+
+        function hideResults() {
+            resultsSection.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
